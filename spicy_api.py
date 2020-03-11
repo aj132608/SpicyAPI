@@ -1,0 +1,128 @@
+from flask import Flask, request
+from firebase_interface import FirebaseInterface
+import json
+
+spicy_api = Flask(__name__)
+
+with open("creds.json") as file:
+    creds = json.load(file)
+
+FIREBASE_OBJ = FirebaseInterface(creds_dict=creds)
+
+
+def encode(raw_string):
+    encoded_string = raw_string.replace(".", "_DOT_")
+    return encoded_string
+
+
+def decode(encoded_string):
+    raw_string = encoded_string.replace("_DOT_", ".")
+    return raw_string
+
+
+@spicy_api.route("/get_full_database", methods=['GET'])
+def index():
+    return FIREBASE_OBJ.get_data()
+
+
+@spicy_api.route("/get_vehicle_id", methods=['POST'])
+def user_info():
+    post_request = request.json
+    username = None
+    password = None
+
+    try:
+        username = post_request['username']
+        password = post_request['password']
+    except KeyError:
+        return "Error: Missing required key value pair."
+
+    if password is None:
+        if username is None:
+            return "Error: password and username keys have no values."
+        return "Error: password key has no value."
+
+    if username is None:
+        return "Error: username key has no value."
+
+    user = FIREBASE_OBJ.get_data(key=f'users',
+                                 subkey=encode(username))
+
+    if user is None:
+        return f"Error: username {username} not found."
+
+    if password == user['password']:
+        return user['vehicle']
+        # return user
+    else:
+        return "Fetch Unsuccessful: Invalid Password"
+
+
+@spicy_api.route("/get_vehicle_data", methods=['POST'])
+def get_vehicle_data():
+    """
+
+    post_request sample: {
+        "vehicle_id": "vehicle1",
+    }
+
+    :return:
+    """
+
+    post_request = request.json
+
+    try:
+        vehicle_id = post_request['vehicle_id']
+    except KeyError:
+        return "Error: vehicle_id key not provided in POST request."
+
+    if vehicle_id is None or vehicle_id == "":
+        return "Error: No vehicle id provided."
+
+    vehicle_data = FIREBASE_OBJ.get_data(key=f'vehicles',
+                                         subkey=vehicle_id)
+
+    if vehicle_id is None:
+        return f"Error: No vehicle data found for {vehicle_id}."
+
+    return vehicle_data
+
+
+@spicy_api.route("/set_val", methods=['POST'])
+def set_val():
+    """
+
+    Example POST Request
+    post_request = {
+        "vehicle_id": "string",
+        "key": "string",
+        "subkey": "string"  # Optional
+    }
+
+    :return: bool indicating whether or not the update was successful
+
+    """
+
+    post_request = request.json
+
+    vehicle_id = post_request['vehicle_id']
+    key = post_request['key']
+    new_val = post_request['new_val']
+
+    try:
+        subkey = post_request['subkey']
+    except KeyError:
+        subkey = None
+
+    response = FIREBASE_OBJ.change_value(key=f"vehicles/{vehicle_id}/states/{key}",
+                                         subkey=subkey,
+                                         val=new_val)
+
+    if response is None:
+        return "False"
+    else:
+        return "True"
+
+
+if __name__ == "__main__":
+    spicy_api.run(debug=True, host='0.0.0.0')
