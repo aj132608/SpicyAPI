@@ -1,6 +1,5 @@
 import requests
 import json
-import pprint
 
 
 class SpicyApiTest:
@@ -85,39 +84,22 @@ class SpicyApiTest:
 if __name__ == "__main__":
     test_obj = SpicyApiTest()
     vehicle_id_list = test_obj.get_vehicle_id_test()
-    # vehicle_id_dict = {}
-    #
-    # try:
-    #     vehicle_id_dict = json.loads(vehicle_id_list)
-    #     vehicle_id_list = vehicle_id_dict.values()
-    # except ValueError:
-    #     pass
-    # except Exception as e:
-    #     print(f"Exception: {e}")
 
     print(f"Vehicle IDs: {vehicle_id_list}")
-    print(f"response data type: {type(vehicle_id_list)}")
-    # vehicles = {}
-    # for vehicle_id in vehicle_id_list:
-    #     vehicles[vehicle_id] = test_obj.get_vehicle_data_test(vehicle_id)
-    #
-    # pprint.pprint(vehicles)
-    #
-    # print("\n\n")
-    #
-    # dict1 = {
-    #     "vehicle_id": "V-1",
-    #     "key": "carLock",
-    #     "subkey": None,
-    #     "new_val": False
-    # }
-    #
-    # dict2 = {
-    #     "vehicle_id": "V-2",
-    #     "key": "seatHeater",
-    #     "subkey": "fDriver",
-    #     "new_val": True
-    # }
-    #
-    # test_obj.set_val_test(message=dict1)
-    # test_obj.set_val_test(message=dict2)
+
+    dict1 = {
+        "vehicle_id": "V-1",
+        "key": "carLock",
+        "subkey": None,
+        "new_val": False
+    }
+
+    dict2 = {
+        "vehicle_id": "V-2",
+        "key": "seatHeater",
+        "subkey": "fDriver",
+        "new_val": True
+    }
+
+    test_obj.set_val_test(message=dict1)
+    test_obj.set_val_test(message=dict2)
