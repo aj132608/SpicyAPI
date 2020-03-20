@@ -20,6 +20,41 @@ def decode(encoded_string):
     return raw_string
 
 
+def turn_off_vehicle(id):
+    # retrieve the data corresponding to the desired vehicle
+    vehicle_data = FIREBASE_OBJ.get_data(key=f'vehicles',
+                                         subkey=id)
+
+    # isolate the vehicle's states
+    current_states = vehicle_data['states']
+
+    # Turn the car off
+    current_states['carOn'] = False
+
+    # Turn all defrosting off
+    new_defrost = current_states['defrost']
+
+    for key in new_defrost.keys():
+        new_defrost[key] = False
+
+    # Turn all seat heaters off
+    new_seat_heater = current_states['seatHeater']
+
+    for key in new_seat_heater.keys():
+        new_seat_heater[key] = False
+
+    # add the updated values to the states dictionary
+    current_states['defrost'] = new_defrost
+    current_states['seatHeater'] = new_seat_heater
+
+    # pass the updated dictionary to the firebase database
+    set_response = FIREBASE_OBJ.change_value(key=f'vehicles/{id}',
+                                             subkey='states',
+                                             val=current_states)
+
+    return set_response
+
+
 @spicy_api.route("/get_full_database", methods=['GET'])
 def index():
     return FIREBASE_OBJ.get_data()
@@ -96,7 +131,8 @@ def set_val():
     post_request = {
         "vehicle_id": "string",
         "key": "string",
-        "subkey": "string"  # Optional
+        "subkey": "string",  # Optional
+        "new_val": bool
     }
 
     :return: bool indicating whether or not the update was successful
@@ -113,6 +149,15 @@ def set_val():
         subkey = post_request['subkey']
     except KeyError:
         subkey = None
+
+    # check if the request is to turn off the car
+    if key == 'carOn' and new_val == False:
+        set_response = turn_off_vehicle(vehicle_id)
+
+        if set_response is None:
+            return "False"
+        else:
+            return "True"
 
     response = FIREBASE_OBJ.change_value(key=f"vehicles/{vehicle_id}/states/{key}",
                                          subkey=subkey,
