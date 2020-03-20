@@ -69,3 +69,16 @@ class FirebaseInterface:
         self._database_dict = self.get_data()
 
         return response
+
+
+if __name__ == "__main__":
+    creds_dict = {
+        "apiKey": "AIzaSyAEgKwxWknt69I0WPZDSRPycEDlz72dVj4",
+        "authDomain": "practice-db-f1a4a.firebaseapp.com",
+        "databaseURL": "https://practice-db-f1a4a.firebaseio.com",
+        "storageBucket": "practice-db-f1a4a.appspot.com"
+    }
+
+    interface_obj = FirebaseInterface(creds_dict)
+
+    print(interface_obj.get_data())
