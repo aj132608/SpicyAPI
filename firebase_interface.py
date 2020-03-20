@@ -1,4 +1,4 @@
-from firebase import firebase
+from firebasemodified import firebase
 
 
 class FirebaseInterface:

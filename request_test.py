@@ -4,7 +4,7 @@ import pprint
 
 
 class SpicyApiTest:
-    def __init__(self, url='http://localhost:5000/'):
+    def __init__(self, url='http://localhost:8080/'):
         self.url = url
 
     def get_vehicle_id_test(self):
@@ -15,6 +15,8 @@ class SpicyApiTest:
             "password": "blah"
         }
 
+        print("\n          /get_vehicle_id Test           \n")
+
         # Using the requests library, send a POST request with the following
         # message to the URL.
         response = requests.post(url=endpoint,
@@ -23,16 +25,21 @@ class SpicyApiTest:
         # Extract the status code and returned text
         status_code = response.status_code
         response_body = response.text
-        id_list = json.loads(response_body).values()
 
         if status_code == 200:
             print("Test Passed!")
-            print(f"response: {response_body}\n\n")
+            print(f"response: {response_body}\n")
         else:
             print(f"Test Failed with {status_code} status code.")
-            print(f"response: {response_body}\n\n")
+            print(f"response: {response_body}\n")
 
-        return id_list
+        try:
+            id_dict = json.loads(response_body)
+            return list(id_dict.values())
+        except ValueError:
+            return [response_body]
+        except Exception as e:
+            return f"Unexpected data type: {type(response_body)} with Exception: {e}"
 
     def get_vehicle_data_test(self, vehicle_id):
         endpoint = self.url+"get_vehicle_data"
@@ -50,16 +57,15 @@ class SpicyApiTest:
 
         if status_code == 200:
             print("Test Passed!")
-            print(f"response: {response_body}\n\n")
+            print(f"response: {response_body}\n")
         else:
             print(f"Test Failed with {status_code} status code.")
-            print(f"response: {response_body}\n\n")
+            print(f"response: {response_body}\n")
 
         return vehicle_data
 
     def set_val_test(self, message):
         endpoint = self.url + "set_val"
-
 
         response = requests.post(url=endpoint,
                                  json=message)
@@ -70,37 +76,48 @@ class SpicyApiTest:
 
         if status_code == 200:
             print("Test Passed!")
-            print(f"response: {response_body}\n\n")
+            print(f"response: {response_body}\n")
         else:
             print(f"Test Failed with {status_code} status code.")
-            print(f"response: {response_body}\n\n")
+            print(f"response: {response_body}\n")
 
 
 if __name__ == "__main__":
     test_obj = SpicyApiTest()
     vehicle_id_list = test_obj.get_vehicle_id_test()
+    # vehicle_id_dict = {}
+    #
+    # try:
+    #     vehicle_id_dict = json.loads(vehicle_id_list)
+    #     vehicle_id_list = vehicle_id_dict.values()
+    # except ValueError:
+    #     pass
+    # except Exception as e:
+    #     print(f"Exception: {e}")
 
-    vehicles = {}
-    for vehicle_id in vehicle_id_list:
-        vehicles[vehicle_id] = test_obj.get_vehicle_data_test(vehicle_id)
-
-    pprint.pprint(vehicles)
-
-    print("\n\n")
-
-    dict1 = {
-        "vehicle_id": "V-1",
-        "key": "carLock",
-        "subkey": None,
-        "new_val": False
-    }
-
-    dict2 = {
-        "vehicle_id": "V-2",
-        "key": "seatHeater",
-        "subkey": "fDriver",
-        "new_val": True
-    }
-
-    test_obj.set_val_test(message=dict1)
-    test_obj.set_val_test(message=dict2)
+    print(f"Vehicle IDs: {vehicle_id_list}")
+    print(f"response data type: {type(vehicle_id_list)}")
+    # vehicles = {}
+    # for vehicle_id in vehicle_id_list:
+    #     vehicles[vehicle_id] = test_obj.get_vehicle_data_test(vehicle_id)
+    #
+    # pprint.pprint(vehicles)
+    #
+    # print("\n\n")
+    #
+    # dict1 = {
+    #     "vehicle_id": "V-1",
+    #     "key": "carLock",
+    #     "subkey": None,
+    #     "new_val": False
+    # }
+    #
+    # dict2 = {
+    #     "vehicle_id": "V-2",
+    #     "key": "seatHeater",
+    #     "subkey": "fDriver",
+    #     "new_val": True
+    # }
+    #
+    # test_obj.set_val_test(message=dict1)
+    # test_obj.set_val_test(message=dict2)
