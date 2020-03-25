@@ -1,6 +1,8 @@
 from flask import Flask, request
 from firebase_interface import FirebaseInterface
 import json
+import string
+import random
 
 spicy_api = Flask(__name__)
 
@@ -54,11 +56,43 @@ def turn_off_vehicle(id):
 
     return set_response
 
-
+# Temporary, we shouldn't keep this long term
 @spicy_api.route("/get_full_database", methods=['GET'])
 def index():
     return FIREBASE_OBJ.get_data()
 
+@spicy_api.route("/attempt_login", methods=['POST'])
+def attempt_login():
+    post_request = request.json
+    username = None
+    password = None
+
+    try:
+        username = post_request['username']
+        password = post_request['password']
+    except KeyError:
+        return "Error: Missing username or password."
+
+    if password is None or username is None:
+        return "Error: Missing username or password."
+
+    user = FIREBASE_OBJ.get_data(key=f'users',
+                                 subkey=encode(username))
+
+    if user is None:
+        return "Invalid username or password."
+
+    if password == user['password']:
+        token = gen_token()
+        # TODO store the token in the database
+        return token
+        # return user
+    else:
+        return "Invalid username or password."
+
+def gen_token():
+    possibleChars = string.ascii_lowercase+string.ascii_uppercase+string.digits
+    return ''.join(random.choice(possibleChars) for i in range(random.randint(25, 35)))
 
 @spicy_api.route("/get_vehicle_id", methods=['POST'])
 def user_info():
