@@ -61,6 +61,7 @@ def turn_off_vehicle(id):
 def index():
     return FIREBASE_OBJ.get_data()
 
+# Attempt to log in to the server, returns the error message if it fails or the provided credentials are invalid
 @spicy_api.route("/attempt_login", methods=['POST'])
 def attempt_login():
     post_request = request.json
@@ -84,9 +85,8 @@ def attempt_login():
 
     if password == user['password']:
         token = gen_token()
-        # TODO store the token in the database
-        return token
-        # return user
+        # TODO store the hash of the token in the database
+        return '{"token": "'+token+'"}'
     else:
         return "Invalid username or password."
 
