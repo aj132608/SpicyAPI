@@ -252,21 +252,6 @@ On your Flask terminal where you ran the API, something like this should appear:
 127.0.0.1 - - [20/Mar/2020 23:08:32] "POST /set_val HTTP/1.1" 200 -
 ```
 
-## Running the tests
-
-Explain how to run the automated tests for this system.
-
-* Postman
-* Python test file using the requests module
-
-### Postman Testing
-
-TBD
-
-### Python Testing
-
-TBD
-
 ## Deployment
 
 TBD
