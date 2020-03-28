@@ -65,9 +65,34 @@ def turn_off_vehicle(id):
 def index():
     return FIREBASE_OBJ.get_data()
 
+# Revoke a token (Should be done on logout)
+@spicy_api.route("/revoke_token", methods=['POST'])
+def revoke_token():
+    """
+    post_request sample: {
+        "token": "token",
+    }
+
+    :return:
+    """
+    post_request = request.json
+    try:
+        user = get_user(post_request['token'])
+    except KeyError:
+        return "Error: Missing login token."
+    # TODO Revoke the token
+
 # Attempt to log in to the server, returns the error message if it fails or the provided credentials are invalid
 @spicy_api.route("/attempt_login", methods=['POST'])
 def attempt_login():
+    """
+    post_request sample: {
+        "username": "username",
+        "password": "password",
+    }
+
+    :return:
+    """
     post_request = request.json
     username = None
     password = None
