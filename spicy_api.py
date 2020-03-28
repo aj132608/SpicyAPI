@@ -3,6 +3,7 @@ from firebase_interface import FirebaseInterface
 import json
 import string
 import random
+import hashlib
 
 spicy_api = Flask(__name__)
 
@@ -83,9 +84,10 @@ def attempt_login():
     if user is None:
         return "Invalid username or password."
 
-    if password == user['password']:
+    if hash(password, user['salt']) == user['password']:
         token = gen_token()
-        # TODO store the hash of the token in the database
+        hashedToken = hash(token, user['salt'])
+        # TODO store hashedToken in the database as one of the user's tokens
         return '{"token": "'+token+'"}'
     else:
         return "Invalid username or password."
@@ -94,37 +96,37 @@ def gen_token():
     possibleChars = string.ascii_lowercase+string.ascii_uppercase+string.digits
     return ''.join(random.choice(possibleChars) for i in range(random.randint(25, 35)))
 
-@spicy_api.route("/get_vehicle_id", methods=['POST'])
-def user_info():
-    post_request = request.json
-    username = None
-    password = None
+def hash(inStr, salt):
+    return hashlib.pbkdf2_hmac('sha512', inStr, salt, 100000)
 
-    try:
-        username = post_request['username']
-        password = post_request['password']
-    except KeyError:
-        return "Error: Missing required key value pair."
+def get_user(token):
+    if token is None:
+        return "Error: Missing login token."
 
-    if password is None:
-        if username is None:
-            return "Error: password and username keys have no values."
-        return "Error: password key has no value."
+    usermatch = None
+    # TODO get all users
+    users = []
+    for user in users:
+        hashedToken = hash(token, user['salt'])
+        for userTokenKey in user['token']:
+            if user['token'][userTokenKey] == hashedToken:
+                usermatch = user
+                break
 
-    if username is None:
-        return "Error: username key has no value."
-
-    user = FIREBASE_OBJ.get_data(key=f'users',
-                                 subkey=encode(username))
-
-    if user is None:
-        return f"Error: username {username} not found."
-
-    if password == user['password']:
-        return user['vehicle']
-        # return user
+    if usermatch is None:
+        return f"Error: invalid token: {token}"
     else:
-        return "Fetch Unsuccessful: Invalid Password"
+        return usermatch
+
+@spicy_api.route("/get_vehicle_id", methods=['POST'])
+def get_vehicle_ids():
+    post_request = request.json
+    try:
+        user = get_user(post_request['token'])
+    except KeyError:
+        return "Error: Missing login token."
+
+    return user['vehicle']
 
 
 @spicy_api.route("/get_vehicle_data", methods=['POST'])
@@ -139,22 +141,36 @@ def get_vehicle_data():
     """
 
     post_request = request.json
+    try:
+        user = get_user(post_request['token'])
+    except KeyError:
+        return "Error: Missing login token."
 
     try:
         vehicle_id = post_request['vehicle_id']
     except KeyError:
-        return "Error: vehicle_id key not provided in POST request."
+        return "Error: No vehicle id provided."
 
     if vehicle_id is None or vehicle_id == "":
         return "Error: No vehicle id provided."
 
-    vehicle_data = FIREBASE_OBJ.get_data(key=f'vehicles',
-                                         subkey=vehicle_id)
+    has_access = False
 
-    if vehicle_id is None:
-        return f"Error: No vehicle data found for {vehicle_id}."
+    for item in user['vehicle']:
+        if user['vehicle'][item] == vehicle_id:
+            has_access = True
+            break
 
-    return vehicle_data
+    if has_access:
+        vehicle_data = FIREBASE_OBJ.get_data(key=f'vehicles',
+                                            subkey=vehicle_id)
+
+        if vehicle_data is None:
+            return f"Error: No vehicle data found for {vehicle_data}."
+
+        return vehicle_data
+    else:
+        return "Error: You are not authorized to view this vehicle's data"
 
 
 @spicy_api.route("/set_val", methods=['POST'])
