@@ -81,6 +81,28 @@ def revoke_token():
     except KeyError:
         return "Error: Missing login token."
     # TODO Revoke the token
+    # Return an empty json object to indicate success
+    return "{}"
+
+# Verify that your token is still valid
+@spicy_api.route("/verify_token", methods=['POST'])
+def verify_token():
+    """
+    post_request sample: {
+        "token": "token",
+    }
+
+    :return:
+    """
+    post_request = request.json
+    try:
+        user = get_user(post_request['token'])
+    except KeyError:
+        return "Error: Missing login token."
+    if(user == None):
+        return "Invalid Token"
+    # Return an empty json object to indicate success
+    return "{}"
 
 # Attempt to log in to the server, returns the error message if it fails or the provided credentials are invalid
 @spicy_api.route("/attempt_login", methods=['POST'])
