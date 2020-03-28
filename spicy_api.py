@@ -1,5 +1,6 @@
 from flask import Flask, request
 from firebase_interface import FirebaseInterface
+from queuingutils.publisher import Publisher
 import json
 import string
 import random
@@ -11,6 +12,8 @@ with open("creds.json") as file:
     creds = json.load(file)
 
 FIREBASE_OBJ = FirebaseInterface(creds_dict=creds)
+PROJECT_ID = 'pub-sub132608'
+TOPIC_NAME = 'api-pub'
 
 
 def encode(raw_string):
@@ -182,7 +185,8 @@ def set_val():
         "vehicle_id": "string",
         "key": "string",
         "subkey": "string",  # Optional
-        "new_val": bool
+        "new_val": bool,
+        "sender": "string" # app or device
     }
 
     :return: bool indicating whether or not the update was successful
@@ -194,6 +198,7 @@ def set_val():
     vehicle_id = post_request['vehicle_id']
     key = post_request['key']
     new_val = post_request['new_val']
+    sender = post_request['sender']
 
     try:
         subkey = post_request['subkey']
@@ -204,9 +209,12 @@ def set_val():
     if key == 'carOn' and new_val == False:
         set_response = turn_off_vehicle(vehicle_id)
 
+        publisher = Publisher(PROJECT_ID, TOPIC_NAME)
+
         if set_response is None:
             return "False"
         else:
+            publisher.publish_message()
             return "True"
 
     response = FIREBASE_OBJ.change_value(key=f"vehicles/{vehicle_id}/states/{key}",

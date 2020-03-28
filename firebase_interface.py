@@ -1,5 +1,4 @@
 from firebasemodified import firebase
-import json
 
 
 class FirebaseInterface:
