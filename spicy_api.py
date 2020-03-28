@@ -121,8 +121,21 @@ def get_user(token):
     else:
         return usermatch
 
+def can_access_vehicle(user, vehicle_id):
+    for item in user['vehicle']:
+        if user['vehicle'][item] == vehicle_id:
+            return True
+    return False
+
 @spicy_api.route("/get_vehicle_id", methods=['POST'])
 def get_vehicle_ids():
+    """
+    post_request sample: {
+        "token": "token",
+    }
+
+    :return:
+    """
     post_request = request.json
     try:
         user = get_user(post_request['token'])
@@ -135,14 +148,13 @@ def get_vehicle_ids():
 @spicy_api.route("/get_vehicle_data", methods=['POST'])
 def get_vehicle_data():
     """
-
     post_request sample: {
+        "token": "token",
         "vehicle_id": "vehicle1",
     }
 
     :return:
     """
-
     post_request = request.json
     try:
         user = get_user(post_request['token'])
@@ -157,14 +169,7 @@ def get_vehicle_data():
     if vehicle_id is None or vehicle_id == "":
         return "Error: No vehicle id provided."
 
-    has_access = False
-
-    for item in user['vehicle']:
-        if user['vehicle'][item] == vehicle_id:
-            has_access = True
-            break
-
-    if has_access:
+    if can_access_vehicle(user, vehicle_id):
         vehicle_data = FIREBASE_OBJ.get_data(key=f'vehicles',
                                             subkey=vehicle_id)
 
@@ -179,20 +184,17 @@ def get_vehicle_data():
 @spicy_api.route("/set_val", methods=['POST'])
 def set_val():
     """
-
     Example POST Request
     post_request = {
+        "token": "token",
         "vehicle_id": "string",
         "key": "string",
         "subkey": "string",  # Optional
         "new_val": bool,
         "sender": "string" # app or device
     }
-
     :return: bool indicating whether or not the update was successful
-
     """
-
     post_request = request.json
 
     vehicle_id = post_request['vehicle_id']
@@ -204,27 +206,35 @@ def set_val():
         subkey = post_request['subkey']
     except KeyError:
         subkey = None
+    
+    try:
+        user = get_user(post_request['token'])
+    except KeyError:
+        return "False"
 
-    # check if the request is to turn off the car
-    if key == 'carOn' and new_val == False:
-        set_response = turn_off_vehicle(vehicle_id)
+    if can_access_vehicle(user, vehicle_id):
+        # check if the request is to turn off the car
+        if key == 'carOn' and new_val == False:
+            set_response = turn_off_vehicle(vehicle_id)
 
-        publisher = Publisher(PROJECT_ID, TOPIC_NAME)
+            publisher = Publisher(PROJECT_ID, TOPIC_NAME)
 
-        if set_response is None:
+            if set_response is None:
+                return "False"
+            else:
+                publisher.publish_message()
+                return "True"
+
+        response = FIREBASE_OBJ.change_value(key=f"vehicles/{vehicle_id}/states/{key}",
+                                            subkey=subkey,
+                                            val=new_val)
+
+        if response is None:
             return "False"
         else:
-            publisher.publish_message()
             return "True"
-
-    response = FIREBASE_OBJ.change_value(key=f"vehicles/{vehicle_id}/states/{key}",
-                                         subkey=subkey,
-                                         val=new_val)
-
-    if response is None:
+    else:# Cannot access vehicle
         return "False"
-    else:
-        return "True"
 
 
 if __name__ == "__main__":
